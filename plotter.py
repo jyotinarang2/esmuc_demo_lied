@@ -82,6 +82,7 @@ def plot_intonation_histogram_in_cents_from_performance(audio_file_path, tonic_f
     # Convert grid values to note names
     note_labels = cents_to_note_name(np.arange(0, 1200, 100), tonic_frequency)
 
+    plt.figure(figsize=(12, 8))
     sns.set_theme(style="whitegrid")
     plt.plot(grid, kde_values, color="royalblue", lw=2, label="Normalized KDE")
     plt.fill_between(grid, kde_values, color="royalblue", alpha=0.3)
@@ -94,5 +95,4 @@ def plot_intonation_histogram_in_cents_from_performance(audio_file_path, tonic_f
     plt.xticks(np.arange(0, 1200, 100), note_labels) # Label x-axis with note names
     #plt.xlim(0, 1200)  # Limit x-axis to [0, 1200] cents
     plt.legend()
-    plt.savefig(f'{audio_file_path}.png', dpi=200)
-    return grid, kde_values
+    plt.savefig(f'{audio_file_path}.png', dpi=400)
