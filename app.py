@@ -157,7 +157,22 @@ def background_processor(xml_path, audio_path, thread_id):
     try:
         print(f"Starting analysis for thread {thread_id}")
 
+        # Send initial progress
+        result_queue.put({
+            'thread_id': thread_id,
+            'type': 'progress',
+            'progress': 10,
+            'message': 'Starting analysis...'
+        })
+
         # Analyze score
+        result_queue.put({
+            'thread_id': thread_id,
+            'type': 'progress',
+            'progress': 20,
+            'message': 'Analyzing score...'
+        })
+
         score_cache = get_cached_score_analysis(xml_path)
         if score_cache:
             tonic_frequency = score_cache['tonic_frequency']
@@ -177,8 +192,22 @@ def background_processor(xml_path, audio_path, thread_id):
             score_cents = np.array(cents) % 1200
             save_score_analysis_cache(xml_path, tonic_frequency, score_cents)
 
+        result_queue.put({
+            'thread_id': thread_id,
+            'type': 'progress',
+            'progress': 40,
+            'message': 'Score analysis complete. Analyzing audio...'
+        })
+
         # Analyze audio
         timestamps, audio_cents = analyze_audio_with_timestamps(audio_path, tonic_frequency)
+
+        result_queue.put({
+            'thread_id': thread_id,
+            'type': 'progress',
+            'progress': 70,
+            'message': 'Audio analysis complete. Computing distributions...'
+        })
 
         # Compute KDEs
         score_grid, score_kde = compute_kde(score_cents)
@@ -188,6 +217,13 @@ def background_processor(xml_path, audio_path, thread_id):
         from scipy.integrate import simpson
         score_kde /= simpson(score_kde, score_grid)
         audio_kde /= simpson(audio_kde, audio_grid)
+
+        result_queue.put({
+            'thread_id': thread_id,
+            'type': 'progress',
+            'progress': 85,
+            'message': 'Generating plots...'
+        })
 
         # Create separate plots
         score_plot_path = generate_score_plot(
@@ -202,9 +238,17 @@ def background_processor(xml_path, audio_path, thread_id):
             os.path.basename(audio_path)
         )
 
+        result_queue.put({
+            'thread_id': thread_id,
+            'type': 'progress',
+            'progress': 95,
+            'message': 'Finalizing...'
+        })
+
         # Send result
         result = {
             'thread_id': thread_id,
+            'type': 'result',
             'timestamp': datetime.now().strftime('%H:%M:%S.%f')[:-3],
             'xml_path': xml_path,
             'audio_path': audio_path,
@@ -230,6 +274,7 @@ def background_processor(xml_path, audio_path, thread_id):
         traceback.print_exc()
         result_queue.put({
             'thread_id': thread_id,
+            'type': 'error',
             'error': str(e)
         })
 
