@@ -27,7 +27,7 @@ def extract_pitch_from_audio_filtered(
     smooth_thresh: float = 0.5,
     medfilt_kernel: int = 15,
     hop_length: int = 256,          # adjust as you like
-    sr: int | None = None           # None -> native sr
+    sr: int = None           # None -> native sr
 ):
     """
     Mirror CREPE-style filtering on pYIN output:

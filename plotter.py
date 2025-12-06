@@ -12,7 +12,7 @@ def plot_intonation_histogram_in_cents_from_musicxml(file_path, out_path = 'plot
     # Parse the MusicXML file
     score = music21.converter.parse(file_path)
     # Get song name from the file path
-    song_name = file_path.split('\\')[-2]  # Extract the file name without extension
+    song_name = os.path.splitext(os.path.basename(file_path))[0]  # Extract the file name without extension
     print(f"Processing MusicXML file: {file_path} for song: {song_name}")
     # Extract pitches as MIDI numbers
     pitches = []

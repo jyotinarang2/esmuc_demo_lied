@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intonation Analysis Visualizer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .controls {
+            padding: 30px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .control-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 20px;
+            align-items: end;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-group label {
+            font-weight: 600;
+            color: #555;
+            font-size: 0.9em;
+        }
+
+        select {
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        select:hover {
+            border-color: #667eea;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        button {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .main-content {
+            padding: 30px;
+        }
+
+        .plots-section {
+            margin-bottom: 30px;
+        }
+
+        .plots-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .plot-box {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .plot-box h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .plot-box img {
+            width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .waveform-and-region {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .waveform-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .waveform-section h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        #waveformCanvas {
+            width: 100%;
+            height: 400px;
+            background: white;
+            border-radius: 8px;
+            cursor: crosshair;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .region-plot-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .region-plot-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .region-plot-header h3 {
+            color: #667eea;
+            font-size: 1.2em;
+            margin: 0;
+        }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .toggle-container input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .toggle-label {
+            font-size: 0.9em;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .region-plot-section img {
+            width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .status-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .status-box.processing {
+            display: block;
+            background: #fff3cd;
+            border-color: #ffc107;
+        }
+
+        .status-box.complete {
+            display: block;
+            background: #d4edda;
+            border-color: #28a745;
+        }
+
+        .status-box.error {
+            display: block;
+            background: #f8d7da;
+            border-color: #dc3545;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .info-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .info-label {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .instructions {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 10px 15px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+        }
+
+        .instructions h4 {
+            color: #1976d2;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+
+        .instructions ul {
+            list-style-position: inside;
+            color: #555;
+            line-height: 1.6;
+            font-size: 0.85em;
+            margin: 0;
+        }
+
+        .instructions li {
+            margin: 3px 0;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 1024px) {
+            .plots-container {
+                grid-template-columns: 1fr;
+            }
+
+            .control-row {
+                grid-template-columns: 1fr;
+            }
+
+            .waveform-and-region {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎵 Intonation Analysis Visualizer</h1>
+            <p>Compare musical scores with audio performances</p>
+        </div>
+
+        <div class="controls">
+            <div class="control-row">
+                <div class="control-group">
+                    <label for="scoreSelect">📄 Select Score (MusicXML)</label>
+                    <select id="scoreSelect">
+                        <option value="">Loading...</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="audioSelect">🎤 Select Audio File</label>
+                    <select id="audioSelect">
+                        <option value="">Loading...</option>
+                    </select>
+                </div>
+                <button id="analyzeBtn" onclick="startAnalysis()" disabled>
+                    🔍 Analyze
+                </button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div id="statusBox" class="status-box">
+                <div class="loading">
+                    <strong id="statusText">Select files and click Analyze to begin</strong>
+                </div>
+            </div>
+
+            <div id="plotsSection" class="plots-section" style="display: none;">
+                <h2 style="color: #667eea; margin-bottom: 20px;">📊 Full Analysis</h2>
+
+                <div class="info-grid" id="infoGrid">
+                    <!-- Info items will be added here -->
+                </div>
+
+                <div class="plots-container">
+                    <div class="plot-box">
+                        <h3>📝 Score Intonation</h3>
+                        <img id="scorePlot" src="" alt="Score plot">
+                    </div>
+                    <div class="plot-box">
+                        <h3>🎤 Audio Intonation</h3>
+                        <img id="audioPlot" src="" alt="Audio plot">
+                    </div>
+                </div>
+
+                <div class="waveform-and-region">
+                    <div class="waveform-section">
+                        <h3>🌊 Audio Waveform</h3>
+                        <div class="instructions">
+                            <h4>Select time region:</h4>
+                            <ul>
+                                <li>Click and drag to select</li>
+                                <li>Drag edges to adjust</li>
+                                <li>Drag middle to move</li>
+                            </ul>
+                        </div>
+                        <canvas id="waveformCanvas"></canvas>
+                    </div>
+
+                    <div id="regionPlotSection" class="region-plot-section" style="display: none;">
+                        <div class="region-plot-header">
+                            <h3>📍 Selected Region</h3>
+                            <label class="toggle-container">
+                                <input type="checkbox" id="showScoreOverlay" onchange="toggleScoreOverlay()">
+                                <span class="toggle-label">Show Score Overlay</span>
+                            </label>
+                        </div>
+                        <img id="regionPlot" src="" alt="Region plot">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let xmlFiles = [];
+        let audioFiles = [];
+        let currentAnalysis = null;
+
+        // Waveform state
+        let audioData = [];
+        let totalSamples = 0;
+        let sampleRate = 44100;
+        let duration = 0;
+        let selection = null;
+        let isDragging = false;
+        let dragType = null;
+        let dragStartX = 0;
+
+        const canvas = document.getElementById('waveformCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Initialize
+        loadFiles();
+        setInterval(pollResults, 1000);
+
+        // Load available files
+        async function loadFiles() {
+            try {
+                const response = await fetch('/api/list_files');
+                const data = await response.json();
+
+                xmlFiles = data.xml_files;
+                audioFiles = data.audio_files;
+
+                populateDropdown('scoreSelect', xmlFiles);
+                populateDropdown('audioSelect', audioFiles);
+
+                document.getElementById('analyzeBtn').disabled = false;
+            } catch (error) {
+                console.error('Error loading files:', error);
+                document.getElementById('scoreSelect').innerHTML = '<option value="">Error loading files</option>';
+                document.getElementById('audioSelect').innerHTML = '<option value="">Error loading files</option>';
+            }
+        }
+
+        function populateDropdown(id, files) {
+            const select = document.getElementById(id);
+            select.innerHTML = '<option value="">-- Select a file --</option>';
+
+            files.forEach(file => {
+                const option = document.createElement('option');
+                option.value = file;
+                option.textContent = file.split('/').pop();
+                select.appendChild(option);
+            });
+        }
+
+        async function startAnalysis() {
+            const xmlPath = document.getElementById('scoreSelect').value;
+            const audioPath = document.getElementById('audioSelect').value;
+
+            if (!xmlPath || !audioPath) {
+                alert('Please select both a score and an audio file');
+                return;
+            }
+
+            // Show status with spinner
+            const statusBox = document.getElementById('statusBox');
+            statusBox.className = 'status-box processing';
+            statusBox.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <strong id="statusText">Analyzing... This may take a moment.</strong>
+                </div>
+            `;
+
+            // Hide plots
+            document.getElementById('plotsSection').style.display = 'none';
+
+            try {
+                const response = await fetch('/api/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        xml_path: xmlPath,
+                        audio_path: audioPath,
+                        thread_id: Date.now().toString()
+                    })
+                });
+
+                const data = await response.json();
+                console.log('Analysis response:', data);
+
+                // If cached, update status immediately
+                if (data.cached) {
+                    statusBox.className = 'status-box complete';
+                    statusBox.innerHTML = '<strong style="text-align: center; display: block;">✅ Loaded from cache!</strong>';
+                }
+
+            } catch (error) {
+                console.error('Error starting analysis:', error);
+                statusBox.className = 'status-box error';
+                statusBox.innerHTML = '<strong>Error starting analysis</strong>';
+            }
+        }
+
+        async function pollResults() {
+            try {
+                const response = await fetch('/api/get_results');
+                const data = await response.json();
+
+                if (data.results && data.results.length > 0) {
+                    data.results.forEach(result => {
+                        if (result.error) {
+                            showError(result.error);
+                        } else {
+                            displayResults(result);
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Error polling results:', error);
+            }
+        }
+
+        function showError(message) {
+            const statusBox = document.getElementById('statusBox');
+            statusBox.className = 'status-box error';
+            document.getElementById('statusText').textContent = 'Error: ' + message;
+        }
+
+        async function displayResults(result) {
+            currentAnalysis = result;
+
+            // Update status - remove spinner, show completion
+            const statusBox = document.getElementById('statusBox');
+            statusBox.className = 'status-box complete';
+            if (result.cached) {
+                statusBox.innerHTML = '<strong style="text-align: center; display: block;">⚡ Loaded from cache! (instant)</strong>';
+            } else {
+                statusBox.innerHTML = '<strong style="text-align: center; display: block;">✅ Analysis Complete! (cached for next time)</strong>';
+            }
+
+            // Show plots section
+            document.getElementById('plotsSection').style.display = 'block';
+
+            // Update info grid
+            const infoGrid = document.getElementById('infoGrid');
+            infoGrid.innerHTML = `
+                <div class="info-item">
+                    <div class="info-label">Tonic Frequency</div>
+                    <div class="info-value">${result.tonic_frequency.toFixed(2)} Hz</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Audio Duration</div>
+                    <div class="info-value">${result.audio_duration.toFixed(2)}s</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Score Notes</div>
+                    <div class="info-value">${result.score_cents.length}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Audio Frames</div>
+                    <div class="info-value">${result.audio_cents.length}</div>
+                </div>
+            `;
+
+            // Show separate plots
+            const scorePlotUrl = `/plots/${result.score_plot_path}?t=${Date.now()}`;
+            const audioPlotUrl = `/plots/${result.audio_plot_path}?t=${Date.now()}`;
+            console.log('Loading score plot:', scorePlotUrl);
+            console.log('Loading audio plot:', audioPlotUrl);
+            document.getElementById('scorePlot').src = scorePlotUrl;
+            document.getElementById('audioPlot').src = audioPlotUrl;
+
+            // Scroll to results
+            document.getElementById('plotsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            // Load audio waveform
+            console.log('Loading audio waveform...');
+            await loadAudioWaveform(result.audio_path);
+        }
+
+        async function loadAudioWaveform(audioPath) {
+            try {
+                console.log('Loading waveform for:', audioPath);
+                const response = await fetch(`/api/audio_waveform?path=${encodeURIComponent(audioPath)}`);
+                const data = await response.json();
+
+                console.log('Waveform data received:', data);
+
+                audioData = data.audio_data;
+                totalSamples = data.total_samples;
+                sampleRate = data.sample_rate;
+                duration = data.duration;
+
+                // Ensure canvas is visible
+                const canvas = document.getElementById('waveformCanvas');
+                canvas.style.display = 'block';
+
+                // Force resize and redraw
+                resizeCanvas();
+                drawWaveform();
+                setupWaveformInteraction();
+
+                console.log('Waveform loaded successfully');
+            } catch (error) {
+                console.error('Error loading waveform:', error);
+            }
+        }
+
+        function resizeCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            if (rect.width === 0 || rect.height === 0) {
+                console.warn('Canvas has zero dimensions, retrying...');
+                setTimeout(resizeCanvas, 100);
+                return;
+            }
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = rect.height * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            canvas.style.width = rect.width + 'px';
+            canvas.style.height = rect.height + 'px';
+            console.log('Canvas resized to:', rect.width, 'x', rect.height);
+        }
+
+        function drawWaveform() {
+            if (audioData.length === 0) {
+                console.warn('No audio data to draw');
+                return;
+            }
+
+            const rect = canvas.getBoundingClientRect();
+            const width = rect.width;
+            const height = rect.height;
+
+            console.log('Drawing waveform:', audioData.length, 'samples');
+
+            ctx.clearRect(0, 0, width, height);
+
+            // Draw waveform
+            ctx.strokeStyle = '#667eea';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+
+            for (let i = 0; i < audioData.length; i++) {
+                const x = (i / audioData.length) * width;
+                const y = height / 2 + (audioData[i] * height / 2);
+
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+
+            ctx.stroke();
+
+            // Draw center line
+            ctx.strokeStyle = '#ccc';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(0, height / 2);
+            ctx.lineTo(width, height / 2);
+            ctx.stroke();
+
+            // Draw selection
+            if (selection) {
+                const startX = selection.start * width;
+                const endX = selection.end * width;
+
+                ctx.fillStyle = 'rgba(102, 126, 234, 0.2)';
+                ctx.fillRect(startX, 0, endX - startX, height);
+
+                ctx.strokeStyle = '#667eea';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(startX, 0);
+                ctx.lineTo(startX, height);
+                ctx.moveTo(endX, 0);
+                ctx.lineTo(endX, height);
+                ctx.stroke();
+
+                drawHandle(startX, height / 2);
+                drawHandle(endX, height / 2);
+            }
+        }
+
+        function drawHandle(x, y) {
+            ctx.fillStyle = '#667eea';
+            ctx.beginPath();
+            ctx.arc(x, y, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        function setupWaveformInteraction() {
+            canvas.addEventListener('mousedown', onMouseDown);
+            canvas.addEventListener('mousemove', onMouseMove);
+            canvas.addEventListener('mouseup', onMouseUp);
+            canvas.addEventListener('mouseleave', () => { isDragging = false; });
+        }
+
+        function onMouseDown(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) / rect.width;
+
+            if (selection) {
+                const handleRadius = 15 / rect.width;
+
+                if (Math.abs(x - selection.start) < handleRadius) {
+                    isDragging = true;
+                    dragType = 'left';
+                    return;
+                }
+
+                if (Math.abs(x - selection.end) < handleRadius) {
+                    isDragging = true;
+                    dragType = 'right';
+                    return;
+                }
+
+                if (x >= selection.start && x <= selection.end) {
+                    isDragging = true;
+                    dragType = 'move';
+                    dragStartX = x;
+                    return;
+                }
+            }
+
+            isDragging = true;
+            dragType = 'new';
+            selection = { start: x, end: x };
+            drawWaveform();
+        }
+
+        function onMouseMove(e) {
+            if (!isDragging) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+
+            if (dragType === 'new') {
+                selection.end = x;
+            } else if (dragType === 'left') {
+                selection.start = Math.min(x, selection.end - 0.01);
+            } else if (dragType === 'right') {
+                selection.end = Math.max(x, selection.start + 0.01);
+            } else if (dragType === 'move') {
+                const delta = x - dragStartX;
+                const width = selection.end - selection.start;
+                selection.start = Math.max(0, Math.min(1 - width, selection.start + delta));
+                selection.end = selection.start + width;
+                dragStartX = x;
+            }
+
+            drawWaveform();
+        }
+
+        async function onMouseUp() {
+            if (isDragging && selection && currentAnalysis) {
+                isDragging = false;
+
+                if (selection.start > selection.end) {
+                    [selection.start, selection.end] = [selection.end, selection.start];
+                }
+
+                const startTime = selection.start * duration;
+                const endTime = selection.end * duration;
+
+                await updateRegionPlot(startTime, endTime);
+            }
+        }
+
+        async function updateRegionPlot(startTime, endTime) {
+            const showScoreOverlay = document.getElementById('showScoreOverlay').checked;
+
+            try {
+                const response = await fetch('/api/update_region', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        timestamps: currentAnalysis.audio_timestamps,
+                        cents: currentAnalysis.audio_cents,
+                        tonic_frequency: currentAnalysis.tonic_frequency,
+                        start_time: startTime,
+                        end_time: endTime,
+                        name: 'Audio Region',
+                        show_score_overlay: showScoreOverlay,
+                        score_grid: showScoreOverlay ? currentAnalysis.score_grid : null,
+                        score_kde: showScoreOverlay ? currentAnalysis.score_kde : null
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.plot_path) {
+                    document.getElementById('regionPlotSection').style.display = 'block';
+                    document.getElementById('regionPlot').src = `/plots/${data.plot_path}?t=${Date.now()}`;
+                }
+            } catch (error) {
+                console.error('Error updating region plot:', error);
+            }
+        }
+
+        function toggleScoreOverlay() {
+            // Re-generate the current region plot with/without overlay
+            if (selection && currentAnalysis) {
+                const startTime = selection.start * duration;
+                const endTime = selection.end * duration;
+                updateRegionPlot(startTime, endTime);
+            }
+        }
+
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            if (audioData.length > 0) {
+                drawWaveform();
+            }
+        });
+    </script>
+</body>
+</html>
