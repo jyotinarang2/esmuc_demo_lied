@@ -252,6 +252,7 @@ def background_processor(xml_path, audio_path, thread_id):
             'timestamp': datetime.now().strftime('%H:%M:%S.%f')[:-3],
             'xml_path': xml_path,
             'audio_path': audio_path,
+            'song_name': os.path.basename(os.path.dirname(audio_path)),  # Folder name containing audio
             'tonic_frequency': float(tonic_frequency),
             'score_plot_path': score_plot_path,
             'audio_plot_path': audio_plot_path,
@@ -286,9 +287,8 @@ def generate_score_plot(score_grid, score_kde, tonic_frequency, score_name):
     fig, ax = plt.subplots(figsize=(10, 6))
     sns.set_theme(style="whitegrid")
 
-    ax.plot(score_grid, score_kde, color="royalblue", lw=2, label="Score KDE")
+    ax.plot(score_grid, score_kde, color="royalblue", lw=2, label="Reference Score")
     ax.fill_between(score_grid, score_kde, color="royalblue", alpha=0.3)
-    ax.set_xlabel("Cents (relative to tonic)", fontsize=12)
     ax.set_ylabel("Probability Density", fontsize=12)
     ax.set_title(f"Score Intonation: {score_name}", fontsize=14, fontweight='bold')
 
@@ -318,9 +318,8 @@ def generate_audio_plot(audio_grid, audio_kde, tonic_frequency, audio_name):
     fig, ax = plt.subplots(figsize=(10, 6))
     sns.set_theme(style="whitegrid")
 
-    ax.plot(audio_grid, audio_kde, color="coral", lw=2, label="Audio KDE")
+    ax.plot(audio_grid, audio_kde, color="coral", lw=2, label="Vocal Performance")
     ax.fill_between(audio_grid, audio_kde, color="coral", alpha=0.3)
-    ax.set_xlabel("Cents (relative to tonic)", fontsize=12)
     ax.set_ylabel("Probability Density", fontsize=12)
     ax.set_title(f"Audio Intonation: {audio_name}", fontsize=14, fontweight='bold')
 
@@ -406,7 +405,7 @@ def generate_region_plot(timestamps, cents, tonic_frequency, start_time, end_tim
     sns.set_theme(style="whitegrid")
 
     # Plot audio KDE
-    ax.plot(grid, kde_values, color="coral", lw=2.5, label="Audio Region KDE", zorder=3)
+    ax.plot(grid, kde_values, color="coral", lw=2.5, label="Vocal Performance", zorder=3)
     ax.fill_between(grid, kde_values, color="coral", alpha=0.3, zorder=2)
 
     # Optionally overlay score KDE
@@ -414,10 +413,9 @@ def generate_region_plot(timestamps, cents, tonic_frequency, start_time, end_tim
         score_grid = np.array(score_grid)
         score_kde = np.array(score_kde)
         ax.plot(score_grid, score_kde, color="royalblue", lw=2,
-               label="Score KDE (reference)", linestyle='--', alpha=0.7, zorder=2)
+               label="Reference Score", linestyle='--', alpha=0.7, zorder=2)
         ax.fill_between(score_grid, score_kde, color="royalblue", alpha=0.15, zorder=1)
 
-    ax.set_xlabel("Cents (relative to tonic)", fontsize=12)
     ax.set_ylabel("Probability Density", fontsize=12)
     title = f"{name} - Region: {start_time:.2f}s to {end_time:.2f}s"
     if show_score_overlay:
@@ -548,6 +546,7 @@ def analyze():
                 'timestamp': datetime.now().strftime('%H:%M:%S.%f')[:-3],
                 'xml_path': xml_path,
                 'audio_path': audio_path,
+                'song_name': os.path.basename(os.path.dirname(audio_path)),  # Folder name containing audio
                 'tonic_frequency': float(tonic_frequency),
                 'score_plot_path': score_plot_path,
                 'audio_plot_path': audio_plot_path,

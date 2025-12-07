@@ -406,7 +406,8 @@
             </div>
 
             <div id="plotsSection" class="plots-section" style="display: none;">
-                <h2 style="color: #667eea; margin-bottom: 20px;">📊 Full Analysis</h2>
+                <h2 style="color: #667eea; margin-bottom: 10px;">📊 Full Analysis</h2>
+                <h3 id="songName" style="color: #764ba2; margin-bottom: 20px; font-weight: normal;"></h3>
 
                 <div class="info-grid" id="infoGrid">
                     <!-- Info items will be added here -->
@@ -607,6 +608,7 @@
         }
 
         async function displayResults(result) {
+            console.log('displayResults called with:', result);
             currentAnalysis = result;
 
             // Update status - remove spinner, show completion
@@ -619,7 +621,17 @@
             }
 
             // Show plots section
+            console.log('Showing plots section');
             document.getElementById('plotsSection').style.display = 'block';
+
+            // Update song name
+            console.log('Setting song name:', result.song_name);
+            const songNameElement = document.getElementById('songName');
+            if (songNameElement) {
+                songNameElement.textContent = result.song_name || 'Unknown Song';
+            } else {
+                console.error('songName element not found!');
+            }
 
             // Update info grid
             const infoGrid = document.getElementById('infoGrid');
