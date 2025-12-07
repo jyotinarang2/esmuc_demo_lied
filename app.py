@@ -291,7 +291,9 @@ def generate_score_plot(score_grid, score_kde, tonic_frequency, score_name):
     ax.set_xlabel("Cents (relative to tonic)", fontsize=12)
     ax.set_ylabel("Probability Density", fontsize=12)
     ax.set_title(f"Score Intonation: {score_name}", fontsize=14, fontweight='bold')
-    ax.set_xlim(0, 1200)
+
+    # Set x-axis with padding beyond tick labels
+    ax.set_xlim(-50, 1250)  # Extend beyond 0-1200 range
     note_labels = cents_to_note_name(np.arange(0, 1200, 100), tonic_frequency)
     ax.set_xticks(np.arange(0, 1200, 100))
     ax.set_xticklabels(note_labels)
@@ -321,7 +323,9 @@ def generate_audio_plot(audio_grid, audio_kde, tonic_frequency, audio_name):
     ax.set_xlabel("Cents (relative to tonic)", fontsize=12)
     ax.set_ylabel("Probability Density", fontsize=12)
     ax.set_title(f"Audio Intonation: {audio_name}", fontsize=14, fontweight='bold')
-    ax.set_xlim(0, 1200)
+
+    # Set x-axis with padding beyond tick labels
+    ax.set_xlim(-50, 1250)  # Extend beyond 0-1200 range
     note_labels = cents_to_note_name(np.arange(0, 1200, 100), tonic_frequency)
     ax.set_xticks(np.arange(0, 1200, 100))
     ax.set_xticklabels(note_labels)
@@ -419,7 +423,9 @@ def generate_region_plot(timestamps, cents, tonic_frequency, start_time, end_tim
     if show_score_overlay:
         title += " (with Score Overlay)"
     ax.set_title(title, fontsize=14, fontweight='bold')
-    ax.set_xlim(0, 1200)
+
+    # Set x-axis with padding beyond tick labels (same as main plots)
+    ax.set_xlim(-50, 1250)  # Extend beyond 0-1200 range
     note_labels = cents_to_note_name(np.arange(0, 1200, 100), tonic_frequency)
     ax.set_xticks(np.arange(0, 1200, 100))
     ax.set_xticklabels(note_labels)

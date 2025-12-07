@@ -94,7 +94,15 @@ def cents_to_note_name(cents, tonic_frequency):
     # Convert frequencies to MIDI numbers
     midi_numbers = np.round(librosa.hz_to_midi(frequencies)).astype(int)
     # Convert MIDI numbers to note names
-    return [music21.pitch.Pitch(midi).name for midi in midi_numbers]
+    note_names = []
+    for midi in midi_numbers:
+        pitch = music21.pitch.Pitch(midi)
+        # Only show natural notes (no sharps or flats)
+        if '#' in pitch.name or '-' in pitch.name:
+            note_names.append('')  # Empty string for sharp/flat notes
+        else:
+            note_names.append(pitch.name)
+    return note_names
 
 def compute_kde(cents):
     """Return normalized KDE over cents in [0,1200)."""
@@ -110,4 +118,3 @@ def compute_kde(cents):
     if auc != 0:
         kde_values = kde_values / auc
     return grid, kde_values
-
