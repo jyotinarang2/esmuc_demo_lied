@@ -442,7 +442,7 @@
                         <div class="region-plot-header">
                             <h3>📍 Selected Region</h3>
                             <label class="toggle-container">
-                                <input type="checkbox" id="showScoreOverlay" onchange="toggleScoreOverlay()">
+                                <input type="checkbox" id="showScoreOverlay" onchange="toggleScoreOverlay()" checked>
                                 <span class="toggle-label">Show Score Overlay</span>
                             </label>
                         </div>
@@ -555,7 +555,7 @@
                     updateProgress(100, 'Loaded from cache!');
                     setTimeout(() => {
                         statusBox.className = 'status-box complete';
-                        statusBox.innerHTML = '<strong style="text-align: center; display: block;">⚡ Loaded from cache! (instant)</strong>';
+                        statusBox.innerHTML = '<strong style="text-align: center; display: block;">⚡ Analysis Complete!</strong>';
                     }, 500);
                 } else {
                     // Start with initial progress
@@ -575,13 +575,18 @@
                 const data = await response.json();
 
                 if (data.results && data.results.length > 0) {
+                    console.log('Received results:', data.results);
                     data.results.forEach(result => {
+                        console.log('Processing result:', result.type || 'no type', result);
                         if (result.type === 'progress') {
                             updateProgress(result.progress, result.message);
                         } else if (result.type === 'error' || result.error) {
                             showError(result.error);
-                        } else if (result.type === 'result' || result.tonic_frequency) {
+                        } else if (result.type === 'result' || result.tonic_frequency !== undefined) {
+                            console.log('Calling displayResults');
                             displayResults(result);
+                        } else {
+                            console.warn('Unknown result type:', result);
                         }
                     });
                 }
@@ -604,7 +609,7 @@
         function showError(message) {
             const statusBox = document.getElementById('statusBox');
             statusBox.className = 'status-box error';
-            document.getElementById('statusText').textContent = 'Error: ' + message;
+            statusBox.innerHTML = '<strong>Error: ' + message + '</strong>';
         }
 
         async function displayResults(result) {
@@ -614,11 +619,7 @@
             // Update status - remove spinner, show completion
             const statusBox = document.getElementById('statusBox');
             statusBox.className = 'status-box complete';
-            if (result.cached) {
-                statusBox.innerHTML = '<strong style="text-align: center; display: block;">⚡ Loaded from cache! (instant)</strong>';
-            } else {
-                statusBox.innerHTML = '<strong style="text-align: center; display: block;">✅ Analysis Complete! (cached for next time)</strong>';
-            }
+            statusBox.innerHTML = '<strong style="text-align: center; display: block;">✅ Analysis Complete!</strong>';
 
             // Show plots section
             console.log('Showing plots section');
@@ -688,7 +689,12 @@
                 drawWaveform();
                 setupWaveformInteraction();
 
-                console.log('Waveform loaded successfully');
+                // Auto-select entire waveform and plot it
+                selection = { start: 0, end: 1 };  // 0 to 1 represents full duration
+                drawWaveform();  // Redraw with selection highlighted
+                await updateRegionPlot(0, duration);  // Generate region plot for full audio
+
+                console.log('Waveform loaded successfully with full selection');
             } catch (error) {
                 console.error('Error loading waveform:', error);
             }
